@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.12
 
 require (
-	github.com/danielkov/gin-helmet v1.0.2
+	github.com/danielkov/gin-helmet/ginhelmet v1.0.0
 	github.com/gin-contrib/gzip v1.2.5
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/newrelic/go-agent/v3/integrations/nrmysql v1.2.2
@@ -20,7 +20,6 @@ require (
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/danielkov/gin-helmet/core v1.0.0 // indirect
-	github.com/danielkov/gin-helmet/ginhelmet v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect

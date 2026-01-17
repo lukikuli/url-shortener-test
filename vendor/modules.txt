@@ -57,9 +57,6 @@ github.com/cloudwego/base64x/internal/native
 github.com/cloudwego/base64x/internal/native/avx2
 github.com/cloudwego/base64x/internal/native/sse
 github.com/cloudwego/base64x/internal/rt
-# github.com/danielkov/gin-helmet v1.0.2
-## explicit; go 1.21
-github.com/danielkov/gin-helmet
 # github.com/danielkov/gin-helmet/core v1.0.0
 ## explicit; go 1.21
 github.com/danielkov/gin-helmet/core
