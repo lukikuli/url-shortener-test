@@ -20,7 +20,7 @@ func NewShortenerService() ShortenerService {
 }
 
 func (service *shortenerServiceImpl) GenerateShortenUrlCode(ctx context.Context, longUrl string) (string, error) {
-	raw := fmt.Sprintf("%s:%d:%d", longUrl, time.Now().UnixNano(), rand.Int())
+	raw := fmt.Sprintf("%s:%d:%d", longUrl, time.Now().UnixNano(), rand.Int()) // #nosec G404
 	hash := sha256Of(raw)
 	encodedStr := generateCodeFromHash(hash)
 

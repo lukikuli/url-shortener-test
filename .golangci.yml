@@ -1,0 +1,28 @@
+version: "2"
+
+run:
+  timeout: 3m
+
+linters:
+  enable:
+    - revive
+    - gocyclo
+  exclusions:
+    paths:
+      - "_test\\.go$"
+      - "tests/.*"
+
+linters-settings:
+  gocyclo:
+    min-complexity: 10
+
+  revive:
+    rules:
+      - name: var-naming
+      - name: early-return
+      - name: unused-parameter
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
