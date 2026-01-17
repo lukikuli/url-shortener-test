@@ -1,0 +1,5 @@
+.env
+vendor
+coverage.cov
+*.sh
+*.log
