@@ -7,20 +7,24 @@ import (
 )
 
 type ShortenerUsecase interface {
-	CreateShortUrl(ctx context.Context, url string) (string, error)
-	GetOriginalUrl(ctx context.Context, shortCode string) (string, error)
+	ShortenURL(ctx context.Context, url, ttl string) (string, error)
+	RedirectURL(ctx context.Context, shortCode string) (string, error)
 }
 
 type shortenerUC struct {
-	repo repository.UrlMappingRepo
-	svc  service.ShortenerService
+	repo  repository.UrlShortenRepo
+	svc   service.ShortenerService
+	clock service.Clock
 }
 
 func NewShortenerUsecase(
-	r repository.UrlMappingRepo,
-	svc service.ShortenerService) ShortenerUsecase {
+	r repository.UrlShortenRepo,
+	svc service.ShortenerService,
+	clock service.Clock,
+) ShortenerUsecase {
 	return &shortenerUC{
-		repo: r,
-		svc:  svc,
+		repo:  r,
+		svc:   svc,
+		clock: clock,
 	}
 }

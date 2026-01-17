@@ -1,6 +1,7 @@
 package shortener
 
 import (
+	"doit/urlshortener/internal/presentation/http/request"
 	"doit/urlshortener/internal/presentation/http/response"
 	"net/http"
 
@@ -8,8 +9,14 @@ import (
 )
 
 func (h *Handler) ShortenUrl(c *gin.Context) {
+	var payload request.RequestShortenUrl
 
-	result, err := h.shortenerUC.CreateShortUrl(c, "")
+	if payload.LongUrl == "" {
+		response.ErrorResponse(c, http.StatusNotFound, "url is required")
+		return
+	}
+
+	result, err := h.shortenerUC.ShortenURL(c, payload.LongUrl, payload.TTLSeconds)
 	if err != nil {
 		response.ErrorResponse(c, http.StatusNotFound, err.Error())
 		return

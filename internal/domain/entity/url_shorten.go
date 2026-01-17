@@ -2,13 +2,8 @@ package entity
 
 import (
 	valueobject "doit/urlshortener/internal/domain/value_object"
-	"errors"
 	"time"
 )
-
-type Clock interface {
-	Now() time.Time
-}
 
 type UrlShorten struct {
 	longUrl        string
@@ -19,37 +14,31 @@ type UrlShorten struct {
 	clickCount     int
 }
 
-func NewUrlShorten(raw string, ttl time.Duration, clock Clock) (*UrlShorten, error) {
+func NewUrlShorten(raw, code string, ttl time.Duration, now time.Time) (*UrlShorten, error) {
 	validUrl, err := valueobject.NewLongUrl(raw)
 	if err != nil {
 		return nil, err
 	}
 
-	now := clock.Now()
-
 	return &UrlShorten{
-		longUrl:   validUrl,
-		createdAt: now,
+		longUrl:    validUrl,
+		shortCode:  code,
+		createdAt:  now,
+		expiredAt:  now.Add(ttl),
+		clickCount: 0,
 	}, nil
 }
 
-func (u *UrlShorten) SetShortCode(coded string) {
-	u.shortCode = coded
-}
-
-func (u *UrlShorten) SetClick(count int) {
-	u.clickCount = count
-}
-
-func (u *UrlShorten) IncreaseClick(clock Clock) error {
-	if u.IsExpired(clock) {
-		return errors.New("expired")
-	}
-
+func (u *UrlShorten) IncreaseClick() {
 	u.clickCount++
-	u.lastAccessedAt = clock.Now()
+}
 
-	return nil
+func (u *UrlShorten) SetLastAccessedAt(t time.Time) {
+	u.lastAccessedAt = t
+}
+
+func (u *UrlShorten) IsExpired(now time.Time) bool {
+	return now.After(u.expiredAt)
 }
 
 func (u *UrlShorten) LongUrl() string {
@@ -60,14 +49,18 @@ func (u *UrlShorten) ShortCode() string {
 	return u.shortCode
 }
 
-func (u *UrlShorten) ClickCount() int {
-	return u.clickCount
-}
-
 func (u *UrlShorten) CreatedAt() time.Time {
 	return u.createdAt
 }
 
-func (u *UrlShorten) IsExpired(clock Clock) bool {
-	return clock.Now().After(u.expiredAt)
+func (u *UrlShorten) ExpiredAt() time.Time {
+	return u.expiredAt
+}
+
+func (u *UrlShorten) LastAccessedAt() time.Time {
+	return u.lastAccessedAt
+}
+
+func (u *UrlShorten) ClickCount() int {
+	return u.clickCount
 }

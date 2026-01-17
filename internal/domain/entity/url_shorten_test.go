@@ -7,41 +7,44 @@ import (
 )
 
 func TestNewUrlShorten(t *testing.T) {
+	fixedTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl := 24 * time.Hour
+
 	tests := []struct {
 		name        string
 		rawUrl      string
-		clickCount  int
+		shortCode   string
 		expectError bool
 	}{
 		{
 			name:        "valid http url",
 			rawUrl:      "http://example.com",
-			clickCount:  0,
+			shortCode:   "abc123",
 			expectError: false,
 		},
 		{
 			name:        "valid https url",
 			rawUrl:      "https://example.com/path",
-			clickCount:  5,
+			shortCode:   "xyz789",
 			expectError: false,
 		},
 		{
 			name:        "invalid url",
 			rawUrl:      "invalid-url",
-			clickCount:  0,
+			shortCode:   "abc123",
 			expectError: true,
 		},
 		{
 			name:        "empty url",
 			rawUrl:      "",
-			clickCount:  0,
+			shortCode:   "abc123",
 			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			urlMapping, err := entity.NewUrlShorten(tt.rawUrl)
+			urlShorten, err := entity.NewUrlShorten(tt.rawUrl, tt.shortCode, ttl, fixedTime)
 
 			if tt.expectError {
 				if err == nil {
@@ -55,53 +58,85 @@ func TestNewUrlShorten(t *testing.T) {
 				return
 			}
 
-			if urlMapping.LongUrl() != tt.rawUrl {
-				t.Errorf("expected longUrl %s, got %s", tt.rawUrl, urlMapping.LongUrl())
+			if urlShorten.LongUrl() != tt.rawUrl {
+				t.Errorf("expected longUrl %s, got %s", tt.rawUrl, urlShorten.LongUrl())
 			}
 
-			if urlMapping.ClickCount() != tt.clickCount {
-				t.Errorf("expected clickCount %d, got %d", tt.clickCount, urlMapping.ClickCount())
+			if urlShorten.ShortCode() != tt.shortCode {
+				t.Errorf("expected shortCode %s, got %s", tt.shortCode, urlShorten.ShortCode())
 			}
 
-			if urlMapping.CreatedAt().IsZero() {
-				t.Error("createdAt should not be zero")
+			if urlShorten.ClickCount() != 0 {
+				t.Errorf("expected clickCount 0, got %d", urlShorten.ClickCount())
 			}
 
-			if urlMapping.ShortCode() != "" {
-				t.Error("shortCode should be empty initially")
+			if !urlShorten.CreatedAt().Equal(fixedTime) {
+				t.Errorf("expected createdAt %v, got %v", fixedTime, urlShorten.CreatedAt())
 			}
 		})
 	}
 }
 
-func TestUrlMapping_SeturlCode(t *testing.T) {
-	urlMapping, _ := entity.NewUrlShorten("https://example.com")
-	code := "abc123"
+func TestUrlShorten_IncreaseClick(t *testing.T) {
+	now := time.Now()
+	urlShorten, _ := entity.NewUrlShorten("https://example.com", "abc123", time.Hour, now)
 
-	urlMapping.SetShortCode(code)
+	urlShorten.IncreaseClick()
 
-	if urlMapping.ShortCode() != code {
-		t.Errorf("expected urlCode %s, got %s", code, urlMapping.ShortCode())
+	if urlShorten.ClickCount() != 1 {
+		t.Errorf("expected clickCount 1, got %d", urlShorten.ClickCount())
+	}
+
+	urlShorten.IncreaseClick()
+
+	if urlShorten.ClickCount() != 2 {
+		t.Errorf("expected clickCount 2, got %d", urlShorten.ClickCount())
 	}
 }
 
-func TestUrlMapping_IncreaseClick(t *testing.T) {
-	urlMapping, _ := entity.NewUrlShorten("https://example.com")
+func TestUrlShorten_SetLastAccessedAt(t *testing.T) {
+	now := time.Now()
+	urlShorten, _ := entity.NewUrlShorten("https://example.com", "abc123", time.Hour, now)
+	accessTime := time.Date(2024, 1, 2, 10, 0, 0, 0, time.UTC)
 
-	urlMapping.IncreaseClick()
+	// Initially should be zero
+	if !urlShorten.LastAccessedAt().IsZero() {
+		t.Error("lastAccessedAt should be zero initially")
+	}
 
-	if urlMapping.ClickCount() != 6 {
-		t.Errorf("expected clickCount 6, got %d", urlMapping.ClickCount())
+	urlShorten.SetLastAccessedAt(accessTime)
+
+	if !urlShorten.LastAccessedAt().Equal(accessTime) {
+		t.Errorf("expected lastAccessedAt %v, got %v", accessTime, urlShorten.LastAccessedAt())
 	}
 }
 
-func TestUrlMapping_CreatedAt(t *testing.T) {
-	before := time.Now()
-	urlMapping, _ := entity.NewUrlShorten("https://example.com")
-	after := time.Now()
+func TestUrlShorten_ExpiredAt(t *testing.T) {
+	fixedTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl := 2 * time.Hour
+	expectedExpiry := fixedTime.Add(ttl)
 
-	createdAt := urlMapping.CreatedAt()
-	if createdAt.Before(before) || createdAt.After(after) {
-		t.Error("createdAt should be between before and after timestamps")
+	urlShorten, _ := entity.NewUrlShorten("https://example.com", "abc123", ttl, fixedTime)
+
+	if !urlShorten.ExpiredAt().Equal(expectedExpiry) {
+		t.Errorf("expected expiredAt %v, got %v", expectedExpiry, urlShorten.ExpiredAt())
+	}
+}
+
+func TestUrlShorten_IsExpired(t *testing.T) {
+	fixedTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl := time.Hour
+
+	urlShorten, _ := entity.NewUrlShorten("https://example.com", "abc123", ttl, fixedTime)
+
+	// Not expired yet
+	if urlShorten.IsExpired(fixedTime) {
+		t.Error("URL should not be expired yet")
+	}
+
+	// Check expiration after TTL
+	futureTime := fixedTime.Add(2 * time.Hour)
+	if !urlShorten.IsExpired(futureTime) {
+		t.Error("URL should be expired")
 	}
 }
