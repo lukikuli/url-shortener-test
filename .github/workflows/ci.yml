@@ -27,16 +27,18 @@ jobs:
       - name: Verify dependencies
         run: |
           go mod tidy
+          go mod download
           git diff --exit-code
 
-      - name: Run tests
+      - name: Run tests with race detector
         run: |
-          go test ./... -race -count=1
+          go test ./... -race -count=1 -v
 
-      - name: golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: v2.0.0
           args: >
+            run
             --timeout=3m
             --issues-exit-code=1
